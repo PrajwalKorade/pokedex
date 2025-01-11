@@ -11,10 +11,21 @@ const fetchPokemonFromApi = async (name) => {
   }
 };
 
+const fetchSpeciesFromApi = async (id) => {
+  try {
+    const response = await axios.get(
+      `https://pokeapi.co/api/v2/pokemon-species/${id}`
+    );
+    return response.data;
+  } catch (err) {
+    throw new Error(`Failed to fetch Pokémon species: ${err.message}`);
+  }
+};
+
 const fetchAllPokemonFromApi = async () => {
   try {
     const response = await axios.get(
-      `https://pokeapi.co/api/v2/pokemon?limit=1000`
+      `https://pokeapi.co/api/v2/pokemon?limit=100000&offset=0`
     );
     return response.data;
   } catch (err) {
@@ -22,4 +33,8 @@ const fetchAllPokemonFromApi = async () => {
   }
 };
 
-module.exports = { fetchPokemonFromApi, fetchAllPokemonFromApi };
+module.exports = {
+  fetchPokemonFromApi,
+  fetchAllPokemonFromApi,
+  fetchSpeciesFromApi,
+};

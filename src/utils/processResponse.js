@@ -1,4 +1,4 @@
-const processResponse = (data) => {
+const processResponse = (data, speciesData) => {
   try {
     return {
       id: data.id,
@@ -15,7 +15,12 @@ const processResponse = (data) => {
         back: data.sprites.back_default,
         official: data.sprites.other["official-artwork"].front_default,
       },
+      moves: data.moves.slice(-8, -1).map((move) => move.move.name),
       abilities: data.abilities.map((ability) => ability.ability.name),
+      description:
+        speciesData.flavor_text_entries
+          .find((entry) => entry.language.name === "en")
+          ?.flavor_text.replace(/\f/g, " ") || "No description available.",
     };
   } catch (err) {
     console.error(`[UTILS] Failed to process response: ${err.message}`);

@@ -1,5 +1,8 @@
-const { fetchPokemonFromApi } = require("../services/pokemonService");
-const { fetchAllPokemonFromApi } = require("../services/pokemonService");
+const {
+  fetchPokemonFromApi,
+  fetchAllPokemonFromApi,
+  fetchSpeciesFromApi,
+} = require("../services/pokemonService");
 const { processResponse } = require("../utils/processResponse");
 const { logger } = require("../middleware/logger");
 const redisClient = require("../config/redis");
@@ -13,6 +16,13 @@ const getPokemon = async (req, res, next) => {
   try {
     const { name } = req.params;
     const formattedName = name.toLowerCase();
+    // key should not be allPokemon
+    if (formattedName === "allpokemon") {
+      return res.status(400).json({
+        ok: false,
+        error: "Invalid Pokémon name",
+      });
+    }
     const cachedData = await redisClient.get(formattedName);
 
     if (cachedData) {
@@ -30,7 +40,9 @@ const getPokemon = async (req, res, next) => {
 
     logger.info(`Cache miss for ${formattedName}`);
     const data = await fetchPokemonFromApi(formattedName);
-    const processedData = processResponse(data);
+    const speciesData = await fetchSpeciesFromApi(data.id);
+    const processedData = processResponse(data, speciesData);
+
     // console.log(`Fetched data for ${formattedName}`, processedData);
 
     await redisClient.set(formattedName, JSON.stringify(processedData), {
@@ -74,10 +86,11 @@ const suggestPokemon = async (req, res, next) => {
       const allPokemon = JSON.parse(cachedData);
       const fuse = new Fuse(allPokemon, { includeScore: true, threshold: 0.4 });
       const results = fuse.search(formattedName).map((result) => result.item);
+      const limitResults = results.slice(0, 5);
 
       return res.json({
         ok: true,
-        data: results,
+        data: limitResults,
       });
     }
     logger.info("Cache miss for allPokemon");
@@ -89,9 +102,11 @@ const suggestPokemon = async (req, res, next) => {
     const fuse = new Fuse(allPokemon, { includeScore: true, threshold: 0.4 });
     const results = fuse.search(formattedName).map((result) => result.item);
 
+    const limitResults = results.slice(0, 5);
+
     return res.json({
       ok: true,
-      data: results,
+      data: limitResults,
     });
   } catch (err) {
     next(err);
