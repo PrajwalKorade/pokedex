@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Search, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 function PokemonSearch({ onSearch }) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
@@ -38,7 +39,7 @@ function PokemonSearch({ onSearch }) {
       setIsLoading(true);
       try {
         const response = await fetch(
-          `http://127.0.0.1:3000/api/pokemon/suggest?q=${searchTerm}`
+          `${API_URL}/api/pokemon/suggest?q=${searchTerm}`
         );
         if (!response.ok) throw new Error("Failed to fetch suggestions");
         const data = await response.json();

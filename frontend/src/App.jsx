@@ -3,6 +3,7 @@ import PokemonSearch from "./components/pokemon-search";
 import PokemonCard from "./components/pokemon-cardv2";
 import "./App.css";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 function App() {
   const [pokemon, setPokemon] = useState(null);
   const [description, setDescription] = useState("");
@@ -14,9 +15,7 @@ function App() {
       setIsLoading(true);
       setError("");
 
-      const response = await fetch(
-        `http://127.0.0.1:3000/api/pokemon/${query}`
-      );
+      const response = await fetch(`${API_URL}/api/pokemon/${query}`);
       const pokemonData = await response.json();
 
       if (!response.ok) {
