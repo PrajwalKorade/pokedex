@@ -1,4 +1,5 @@
 const redis = require("redis");
+const { logger } = require("../middleware/logger");
 require("dotenv").config();
 
 const client = redis.createClient({
@@ -6,12 +7,11 @@ const client = redis.createClient({
 });
 
 client.on("connect", () => {
-  console.log("[REDIS] Connected to Redis");
+  logger.info("[LOG] Connected to Redis");
 });
 
 client.on("error", (err) => {
-  console.error("[REDIS] Redis error:", err);
-  console.error("[REDIS] Exiting server...");
+  logger.error(" Redis Not Found Exiting server...");
   process.exit(1);
 });
 

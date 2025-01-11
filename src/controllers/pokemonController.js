@@ -60,6 +60,15 @@ const getPokemon = async (req, res, next) => {
       data: processedData,
     });
   } catch (err) {
+    if (err.message.includes("404")) {
+      return res.status(404).json({
+        ok: false,
+        error: {
+          message: "Pokemon not found",
+          status: 404,
+        },
+      });
+    }
     next(err);
   }
 };

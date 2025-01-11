@@ -73,7 +73,7 @@ function PokemonCard({ pokemon, description }) {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto overflow-hidden bg-white/95 backdrop-blur-sm">
+    <Card className="w-full max-w-md mx-auto overflow-hidden bg-white/95 backdrop-blur-sm z-0">
       <div className="relative h-72" style={gradientStyle}>
         <div className="relative h-64 mb-4">
           <div

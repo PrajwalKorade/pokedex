@@ -121,7 +121,7 @@ function PokemonSearch({ onSearch }) {
         </div>
 
         {suggestions.length > 0 && (
-          <div className=" w-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+          <div className="mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 z-50">
             <ScrollArea className="max-h-64">
               <div ref={listRef} className="py-1">
                 {suggestions.map((suggestion, index) => (

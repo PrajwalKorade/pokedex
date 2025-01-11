@@ -1,6 +1,5 @@
 import { useState } from "react";
 import PokemonSearch from "./components/pokemon-search";
-// import PokemonCard from "./components/pokemon-card";
 import PokemonCard from "./components/pokemon-cardv2";
 import "./App.css";
 
@@ -18,15 +17,24 @@ function App() {
       const response = await fetch(
         `http://127.0.0.1:3000/api/pokemon/${query}`
       );
-      if (!response.ok) throw new Error("Pokemon not found");
-
       const pokemonData = await response.json();
+
+      if (!response.ok) {
+        setError(pokemonData.error.message);
+        return;
+      }
       console.log(pokemonData.data);
 
       setPokemon(pokemonData.data);
       setDescription(pokemonData.data.description);
     } catch (err) {
-      setError("Pokemon not found. Please try again.");
+      if (err.status === 404) {
+        setError("Resource not found. 404");
+      } else {
+        setError(
+          "An error occurred. Please check console for more information. " + err
+        );
+      }
       console.error(err);
       setPokemon(null);
     } finally {
@@ -50,7 +58,7 @@ function App() {
         )}
 
         {error && (
-          <div className="rounded-lg bg-red-500/10 p-2 text-center text-red-500">
+          <div className="rounded-lg p-2 w-full max-w-md mx-auto overflow-hidden bg-white/95 backdrop-blur-sm text-red-500 font-medium text-center">
             {error}
           </div>
         )}
