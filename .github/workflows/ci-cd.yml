@@ -27,21 +27,23 @@ jobs:
           cd frontend
           npm install
           npm run build
+          npm install -g serve
+          serve -s dist &
 
       - name: Backend - Install
         working-directory: ./backend
         run: |
           cd ../backend
           npm install
+          npm start &
 
-      - name: Verify Docker Build
+      - name: Wait for Services
         run: |
-          cd ..
-          docker-compose up -d
-          sleep 10
-          docker-compose ps
-
-      - name: Health Check
-        run: |
+          sleep 20
+          curl -f http://localhost:5000/api/pokemon/pikachu || exit 1
           curl -f http://localhost:3000 || exit 1
-          curl -f http://localhost:3001/api/pokemon/pikachu || exit 1
+
+      - name: Cleanup
+        run: |
+          pkill -f "serve"
+          pkill -f "node"
