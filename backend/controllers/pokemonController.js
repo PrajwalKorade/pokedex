@@ -61,12 +61,19 @@ const getPokemon = async (req, res, next) => {
 
     if (!speciesData) {
       logger.info(`Cache miss for ${speciesCacheKey}`);
-      speciesData = await fetchSpeciesFromApi(pokemonData.id);
-      await setInCache(
-        speciesCacheKey,
-        speciesData,
-        CACHE_CONFIG.REDIS_CACHE_EXPIRY
-      );
+      try {
+        speciesData = await fetchSpeciesFromApi(pokemonData.id);
+        await setInCache(
+          speciesCacheKey,
+          speciesData,
+          CACHE_CONFIG.REDIS_CACHE_EXPIRY
+        );
+      } catch (error) {
+        logger.warn(
+          `Species data not found for ${pokemonData.name}, using default`
+        );
+        speciesData = "N/A";
+      }
     }
 
     const processedData = processResponse(pokemonData, speciesData);

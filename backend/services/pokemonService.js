@@ -16,6 +16,7 @@ const fetchSpeciesFromApi = async (id) => {
     const response = await axios.get(
       `https://pokeapi.co/api/v2/pokemon-species/${id}`
     );
+    console.log(response.data);
     return response.data;
   } catch (err) {
     throw new Error(`Failed to fetch Pokémon species: ${err.message}`);

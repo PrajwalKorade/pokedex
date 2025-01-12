@@ -18,9 +18,11 @@ const processResponse = (data, speciesData) => {
       moves: data.moves.slice(-8, -1).map((move) => move.move.name),
       abilities: data.abilities.map((ability) => ability.ability.name),
       description:
-        speciesData.flavor_text_entries
-          .find((entry) => entry.language.name === "en")
-          ?.flavor_text.replace(/\f/g, " ") || "No description available.",
+        speciesData && speciesData !== "N/A" && speciesData.flavor_text_entries
+          ? speciesData.flavor_text_entries
+              .find((entry) => entry.language.name === "en")
+              ?.flavor_text?.replace(/\f/g, " ") || "No description available."
+          : "No description available.",
     };
   } catch (err) {
     console.error(`[UTILS] Failed to process response: ${err.message}`);
