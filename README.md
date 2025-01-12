@@ -14,16 +14,18 @@ This is a simple Pokedex app that allows you to search for Pokemon and view thei
 
 ### Running the app
 1. Clone the repository
-2. Run `docker-compose up --build` to build and run the app
-3. Open [http://localhost:3000](http://localhost:3000) to view it in the browser
-4. API is available at [http://localhost:3001](http://localhost:3001)
-5. Create a .env.local in backend with following variables:
+2. Create a .env.local in backend with following variables:
   
-
 		PORT=3001
 		REDIS_URL=redis://redis:6379
-		POKEAPI_URL=https://pokeapi.co/api/v2/pokemon
-6. Create 
+	POKEAPI_URL=https://pokeapi.co/api/v2/pokemon
+
+3. Run `docker-compose up --build` to build and run the app
+(if faced issues related to esbuild in frontend please `cd frontend` and `npm i -D esbuild@0.24.0` and then run docker compose again)
+4. Open [http://localhost:3000](http://localhost:3000) to view it in the browser
+5. API is available at [http://localhost:3001](http://localhost:3001)
+
+
 
 ##### If you want to run this locally for development then: 
 
