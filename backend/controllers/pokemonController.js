@@ -3,121 +3,140 @@ const {
   fetchAllPokemonFromApi,
   fetchSpeciesFromApi,
 } = require("../services/pokemonService");
+const {
+  CACHE_CONFIG,
+  setCacheHeaders,
+  getFromCache,
+  setInCache,
+} = require("../utils/cache");
+const { getFuzzySearchResults } = require("../utils/search");
 const { processResponse } = require("../utils/processResponse");
 const { logger } = require("../middleware/logger");
-const redisClient = require("../config/redis");
-const Fuse = require("fuse.js");
 
-const CACHE_EXPIRY = 60 * 10;
-const PUBLIC_CACHE_EXPIRY = CACHE_EXPIRY - 60;
-const NAMECACHE_EXPIRY = 60 * 60 * 24 * 7;
-
+/**
+ * Retrieves Pokemon details from the API and caches the response
+ * @param {Request} req  request object with params containing the name of the pokemon
+ * @param {Response} res
+ * @param {NextFunction} next
+ * @returns  {Promise<Response>} returns the details of the Pokemon
+ */
 const getPokemon = async (req, res, next) => {
   try {
     const { name } = req.params;
+    if (!name || typeof name !== "string") {
+      return res.status(400).json({
+        ok: false,
+        message: "Invalid Pokémon name",
+      });
+    }
+
     const formattedName = name.toLowerCase();
-    // key should not be allPokemon
     if (formattedName === "allpokemon") {
       return res.status(400).json({
         ok: false,
-        error: "Invalid Pokémon name",
+        message: "Invalid Pokémon name",
       });
     }
-    const cachedData = await redisClient.get(formattedName);
+
+    const pokemonCacheKey = `pokemon:${formattedName}`;
+    const cachedData = await getFromCache(pokemonCacheKey);
 
     if (cachedData) {
-      logger.info(`Cache hit for ${formattedName}`);
-      res.set({
-        "Cache-Control": `public, max-age=${PUBLIC_CACHE_EXPIRY}`,
-        "X-Cache": "HIT",
-        "X-Cache-Expires-In": `${PUBLIC_CACHE_EXPIRY} seconds`,
-      });
+      logger.info(`Cache hit for ${pokemonCacheKey}`);
+      setCacheHeaders(res, true);
       return res.json({
         ok: true,
-        data: JSON.parse(cachedData),
+        data: cachedData,
       });
     }
 
-    logger.info(`Cache miss for ${formattedName}`);
-    const data = await fetchPokemonFromApi(formattedName);
-    const speciesData = await fetchSpeciesFromApi(data.id);
-    const processedData = processResponse(data, speciesData);
+    logger.info(`Cache miss for ${pokemonCacheKey}`);
 
-    // console.log(`Fetched data for ${formattedName}`, processedData);
+    const pokemonData = await fetchPokemonFromApi(formattedName);
 
-    await redisClient.set(formattedName, JSON.stringify(processedData), {
-      EX: CACHE_EXPIRY,
-    });
+    // Check and fetch species data
+    const speciesCacheKey = `species:${pokemonData.id}`;
+    let speciesData = await getFromCache(speciesCacheKey);
+    logger.info(`Cache hit for ${speciesCacheKey}`);
 
-    res.set({
-      "Cache-Control": `public, max-age=${PUBLIC_CACHE_EXPIRY}`,
-      "X-Cache": "MISS",
-      "X-Cache-Expires-In": `${PUBLIC_CACHE_EXPIRY} seconds`,
-    });
+    if (!speciesData) {
+      logger.info(`Cache miss for ${speciesCacheKey}`);
+      speciesData = await fetchSpeciesFromApi(pokemonData.id);
+      await setInCache(
+        speciesCacheKey,
+        speciesData,
+        CACHE_CONFIG.REDIS_CACHE_EXPIRY
+      );
+    }
 
+    const processedData = processResponse(pokemonData, speciesData);
+    await setInCache(
+      pokemonCacheKey,
+      processedData,
+      CACHE_CONFIG.REDIS_CACHE_EXPIRY
+    );
+
+    setCacheHeaders(res, false);
     return res.json({
       ok: true,
       data: processedData,
     });
   } catch (err) {
-    if (err.message.includes("404")) {
+    logger.error(`Error fetching pokemon ${req.params.name}:`, err);
+
+    if (err.response?.status === 404) {
       return res.status(404).json({
         ok: false,
-        error: {
-          message: "Pokemon not found",
-          status: 404,
-        },
+        message: "Pokemon not found",
       });
     }
     next(err);
   }
 };
 
+/**
+ * Suggest Pokemon based on search query
+ * @param {Request} req request object with query containing the search term
+ * @param {Response} res
+ * @param {NextFunction} next
+ * @returns {Promise<Response>} returns a list of suggested Pokemon
+ */
 const suggestPokemon = async (req, res, next) => {
   try {
-    const { q } = req.query;
+    const formattedName = req.query.q?.toLowerCase();
 
-    console.log(`Suggesting Pokémon for ${q}`);
-
-    if (!q || typeof q !== "string") {
-      return res.json({
-        ok: true,
-        data: [],
+    if (!formattedName) {
+      return res.status(400).json({
+        ok: false,
+        message: "Search query is required",
       });
     }
-    const formattedName = q.toLowerCase();
-    logger.info(`Suggesting Pokemon for ${formattedName}`);
 
-    const cachedData = await redisClient.get("allPokemon");
+    const cachedPokemon = await getFromCache("allPokemon");
 
-    if (cachedData) {
+    if (cachedPokemon) {
       logger.info("Cache hit for allPokemon");
-      const allPokemon = JSON.parse(cachedData);
-      const fuse = new Fuse(allPokemon, { includeScore: true, threshold: 0.4 });
-      const results = fuse.search(formattedName).map((result) => result.item);
-      const limitResults = results.slice(0, 5);
+      const suggestions = getFuzzySearchResults(cachedPokemon, formattedName);
 
       return res.json({
         ok: true,
-        data: limitResults,
+        data: suggestions,
       });
     }
+
     logger.info("Cache miss for allPokemon");
     const { results: pokemonList } = await fetchAllPokemonFromApi();
     const allPokemon = pokemonList.map((pokemon) => pokemon.name);
-    await redisClient.set("allPokemon", JSON.stringify(allPokemon), {
-      EX: NAMECACHE_EXPIRY,
-    });
-    const fuse = new Fuse(allPokemon, { includeScore: true, threshold: 0.4 });
-    const results = fuse.search(formattedName).map((result) => result.item);
 
-    const limitResults = results.slice(0, 5);
+    await setInCache("allPokemon", allPokemon, CACHE_CONFIG.NAMECACHE_EXPIRY);
+    const suggestions = getFuzzySearchResults(allPokemon, formattedName);
 
     return res.json({
       ok: true,
-      data: limitResults,
+      data: suggestions,
     });
   } catch (err) {
+    logger.error("Error in suggestPokemon:", err);
     next(err);
   }
 };

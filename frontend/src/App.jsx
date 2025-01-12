@@ -13,20 +13,24 @@ function App() {
   const searchPokemon = async (query) => {
     try {
       setIsLoading(true);
+      setPokemon(null);
       setError("");
 
       const response = await fetch(`${API_URL}/api/pokemon/${query}`);
       const pokemonData = await response.json();
 
       if (!response.ok) {
+        setPokemon(null);
+        setDescription("");
         setError(pokemonData.error.message);
         return;
       }
-      console.log(pokemonData.data);
-
+      // console.log(pokemonData.data);
       setPokemon(pokemonData.data);
       setDescription(pokemonData.data.description);
     } catch (err) {
+      setPokemon(null);
+      setDescription("");
       if (err.status === 404) {
         setError("Resource not found. 404");
       } else {
@@ -35,7 +39,6 @@ function App() {
         );
       }
       console.error(err);
-      setPokemon(null);
     } finally {
       setIsLoading(false);
     }
