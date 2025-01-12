@@ -31,14 +31,12 @@ jobs:
       - name: Backend - Install
         working-directory: ./backend
         run: |
-          cd backend
+          cd ../backend
           npm install
 
-      - name: Build Docker Images
-        run: docker-compose build
-
-      - name: Start Services
+      - name: Verify Docker Build
         run: |
+          cd ..
           docker-compose up -d
           sleep 10
           docker-compose ps
