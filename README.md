@@ -2,7 +2,7 @@
 
 ## Pokedex App
 
-[![Build Check](https://github.com/kuldeepaher01/pokedex/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/kuldeepaher01/pokedex/actions/workflows/ci-cd.yml)
+[![Build Check](https://github.com/PrajwalKorade/pokedex/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/PrajwalKorade/pokedex/actions/workflows/ci-cd.yml)
 
 This is a simple Pokedex app that allows you to search for Pokemon and view their details. The app is built using React and the [PokeAPI](https://pokeapi/).
 
